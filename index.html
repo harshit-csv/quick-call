@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CSV Import Tool</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-100 p-10">
+    <div class="max-w-lg mx-auto bg-white p-6 rounded-lg shadow-md">
+        <h1 class="text-2xl font-bold mb-4">CSV Import Tool</h1>
+        <input type="file" id="csvFile" accept=".csv" class="mb-4 p-2 border border-gray-300 rounded">
+        <button id="importButton" class="bg-blue-500 text-white px-4 py-2 rounded">Import CSV</button>
+
+        <div id="dataContainer" class="mt-6 hidden">
+            <h2 class="text-xl font-semibold">Imported Data</h2>
+            <div id="dataList" class="mt-2 grid grid-cols-1 gap-4"></div>
+            <div class="flex justify-between mt-4">
+                <button id="prevButton" class="bg-gray-300 text-gray-700 px-4 py-2 rounded" disabled>Previous</button>
+                <button id="nextButton" class="bg-blue-500 text-white px-4 py-2 rounded">Next</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let data = [];
+        let currentIndex = 0;
+
+        document.getElementById('importButton').addEventListener('click', () => {
+            const file = document.getElementById('csvFile').files[0];
+            if (!file) {
+                alert('Please select a CSV file.');
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                const text = event.target.result;
+                const rows = text.split('\n').map(row => row.split(','));
+                
+                // Validate and parse CSV data
+                data = rows.map(row => {
+                    if (row.length >= 2) {
+                        return { name: row[0].trim(), number: row[1].trim() };
+                    }
+                }).filter(Boolean); // Remove undefined entries
+
+                if (data.length === 0) {
+                    alert('No valid data found in the CSV file.');
+                    return;
+                }
+
+                currentIndex = 0;
+                document.getElementById('dataContainer').classList.remove('hidden');
+                renderData();
+            };
+
+            reader.onerror = () => {
+                alert('Error reading file. Please try again.');
+            };
+
+            reader.readAsText(file);
+        });
+
+        function renderData() {
+            const dataList = document.getElementById('dataList');
+            dataList.innerHTML = '';
+
+            const slice = data.slice(currentIndex, currentIndex + 5);
+            slice.forEach(item => {
+                const card = document.createElement('div');
+                card.className = 'bg-white p-4 rounded-lg shadow-md flex justify-between items-center';
+                card.innerHTML = `
+                    <div>
+                        <h3 class="text-lg font-semibold">${item.name}</h3>
+                        <p class="text-gray-600">${item.number}</p>
+                    </div>
+                    <button class="bg-green-500 text-white px-3 py-1 rounded" onclick="callContact('${item.number}')">Call</button>
+                `;
+                dataList.appendChild(card);
+            });
+
+            document.getElementById('prevButton').disabled = currentIndex === 0;
+            document.getElementById('nextButton').disabled = currentIndex + 5 >= data.length;
+        }
+
+        function callContact(number) {
+            window.location.href = `tel:${number}`;
+        }
+
+        document.getElementById('prevButton').addEventListener('click', () => {
+            currentIndex -= 5;
+            renderData();
+        });
+
+        document.getElementById('nextButton').addEventListener('click', () => {
+            currentIndex += 5;
+            renderData();
+        });
+    </script>
+</body>
+</html>
